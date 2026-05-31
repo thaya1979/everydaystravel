@@ -40,5 +40,10 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# large media — host via CDN
+# large media — host via CDN (use Cloudinary instead)
 public/videos/
+public/images/*.JPG
+public/images/*.jpg
+public/images/*.jpeg
+public/images/*.png
+public/images/*.webp
