@@ -7,10 +7,16 @@ import { usePathname } from 'next/navigation'
 import { ChevronDown, Menu, X, ArrowRight } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 
+interface DropdownChild {
+  label:       string
+  href:        string
+  description: string
+}
+
 interface NavItem {
-  label: string
-  href: string
-  hasDropdown?: boolean
+  label:    string
+  href:     string
+  children?: DropdownChild[]
 }
 
 interface NavbarProps {
@@ -19,9 +25,17 @@ interface NavbarProps {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { label: 'Home', href: '/' },
+  { label: 'Home',     href: '/' },
   { label: 'Services', href: '/services' },
-  { label: 'Our Fleet', href: '/fleet', hasDropdown: true },
+  {
+    label: 'Our Fleet',
+    href:  '/fleet',
+    children: [
+      { label: 'Chauffeur Cars',    href: '/fleet/chauffeur-cars',    description: 'Executive & prestige vehicles' },
+      { label: 'Luxury Minibuses',  href: '/fleet/luxury-minibuses',  description: '8 to 16 seat luxury transfers' },
+      { label: 'Executive Coaches', href: '/fleet/executive-coaches', description: '33 to 53 seat premium coaches' },
+    ],
+  },
   { label: 'Reviews', href: '/reviews' },
   { label: 'Contact', href: '/contact' },
 ]
@@ -30,8 +44,9 @@ export default function Navbar({
   ctaText = 'Book your journey',
   ctaHref = '#quote',
 }: NavbarProps) {
-  const [mobileOpen, setMobileOpen] = useState(false)
-  const [scrolled, setScrolled] = useState(false)
+  const [mobileOpen, setMobileOpen]   = useState(false)
+  const [mobileFleet, setMobileFleet] = useState(false)
+  const [scrolled, setScrolled]       = useState(false)
   const pathname = usePathname()
 
   useEffect(() => {
@@ -81,7 +96,73 @@ export default function Navbar({
             aria-label="Main navigation"
           >
             {NAV_ITEMS.map((item) => {
-              const isActive = pathname === item.href
+              const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+
+              if (item.children) {
+                return (
+                  <div key={item.label} className="relative group">
+                    <Link
+                      href={item.href}
+                      aria-current={isActive ? 'page' : undefined}
+                      className={[
+                        'flex items-center gap-[5px] px-4 py-2 text-[13.5px] font-medium rounded-full transition-all duration-200 select-none',
+                        isActive
+                          ? 'text-[#EBBA6F]'
+                          : 'text-white/55 hover:text-white hover:bg-white/[0.05]',
+                      ].join(' ')}
+                      style={{ fontFamily: 'var(--font-ui)' }}
+                    >
+                      {item.label}
+                      <ChevronDown
+                        size={14}
+                        strokeWidth={2}
+                        className={[
+                          'transition-transform duration-200 group-hover:rotate-180',
+                          isActive ? 'text-[#EBBA6F]/70' : 'text-white/60',
+                        ].join(' ')}
+                        aria-hidden
+                      />
+                    </Link>
+
+                    {/* Dropdown panel */}
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto translate-y-1 group-hover:translate-y-0 transition-all duration-200 z-50">
+                      <div className="bg-[#0D1221] border border-white/[0.09] rounded-xl shadow-[0_16px_48px_rgba(0,0,0,0.5)] overflow-hidden min-w-[220px]">
+                        {/* "View all" link at top */}
+                        <Link
+                          href={item.href}
+                          className="flex items-center justify-between px-4 py-3 border-b border-white/[0.07] text-[#EBBA6F] text-[12px] font-semibold tracking-[0.08em] uppercase hover:bg-white/[0.04] transition-colors duration-150"
+                          style={{ fontFamily: 'var(--font-ui)' }}
+                        >
+                          View all fleet
+                          <ArrowRight size={13} aria-hidden />
+                        </Link>
+
+                        {item.children.map((child) => (
+                          <Link
+                            key={child.href}
+                            href={child.href}
+                            className="flex flex-col px-4 py-3 hover:bg-white/[0.04] transition-colors duration-150 group/item"
+                          >
+                            <span
+                              className="text-white text-[13.5px] font-medium group-hover/item:text-[#EBBA6F] transition-colors duration-150"
+                              style={{ fontFamily: 'var(--font-ui)' }}
+                            >
+                              {child.label}
+                            </span>
+                            <span
+                              className="text-white/35 text-[11.5px] mt-0.5"
+                              style={{ fontFamily: 'var(--font-body)' }}
+                            >
+                              {child.description}
+                            </span>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )
+              }
+
               return (
                 <Link
                   key={item.label}
@@ -96,13 +177,6 @@ export default function Navbar({
                   style={{ fontFamily: 'var(--font-ui)' }}
                 >
                   {item.label}
-                  {item.hasDropdown && (
-                    <ChevronDown
-                      size={12}
-                      className={isActive ? 'text-[#EBBA6F]/50' : 'text-white/30'}
-                      aria-hidden
-                    />
-                  )}
                 </Link>
               )
             })}
@@ -159,7 +233,70 @@ export default function Navbar({
               aria-label="Mobile navigation"
             >
               {NAV_ITEMS.map((item) => {
-                const isActive = pathname === item.href
+                const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+
+                if (item.children) {
+                  return (
+                    <div key={item.label}>
+                      <div className="flex items-center">
+                        <Link
+                          href={item.href}
+                          aria-current={isActive ? 'page' : undefined}
+                          className={[
+                            'flex-1 px-4 py-3.5 rounded-xl text-[15px] transition-colors duration-150',
+                            isActive ? 'text-[#EBBA6F] font-medium' : 'text-white/60 hover:text-white',
+                          ].join(' ')}
+                          style={{ fontFamily: 'var(--font-ui)' }}
+                          onClick={() => setMobileOpen(false)}
+                        >
+                          {item.label}
+                        </Link>
+                        <button
+                          onClick={() => setMobileFleet((v) => !v)}
+                          className="px-4 py-3.5 text-white/40 hover:text-white transition-colors duration-150"
+                          aria-label="Toggle fleet submenu"
+                        >
+                          <ChevronDown
+                            size={15}
+                            strokeWidth={2}
+                            className={['transition-transform duration-200', mobileFleet ? 'rotate-180' : ''].join(' ')}
+                            aria-hidden
+                          />
+                        </button>
+                      </div>
+
+                      <AnimatePresence>
+                        {mobileFleet && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.2, ease: 'easeOut' }}
+                            className="overflow-hidden"
+                          >
+                            <div className="ml-4 pl-4 border-l border-white/[0.07] flex flex-col pb-2">
+                              {item.children.map((child) => (
+                                <Link
+                                  key={child.href}
+                                  href={child.href}
+                                  className="flex flex-col py-2.5 text-white/55 hover:text-white transition-colors duration-150"
+                                  style={{ fontFamily: 'var(--font-ui)' }}
+                                  onClick={() => setMobileOpen(false)}
+                                >
+                                  <span className="text-[14px]">{child.label}</span>
+                                  <span className="text-[12px] text-white/30 mt-0.5" style={{ fontFamily: 'var(--font-body)' }}>
+                                    {child.description}
+                                  </span>
+                                </Link>
+                              ))}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  )
+                }
+
                 return (
                   <Link
                     key={item.label}
@@ -175,13 +312,6 @@ export default function Navbar({
                     onClick={() => setMobileOpen(false)}
                   >
                     {item.label}
-                    {item.hasDropdown && (
-                      <ChevronDown
-                        size={15}
-                        className={isActive ? 'text-[#EBBA6F]/40' : 'text-white/20'}
-                        aria-hidden
-                      />
-                    )}
                   </Link>
                 )
               })}

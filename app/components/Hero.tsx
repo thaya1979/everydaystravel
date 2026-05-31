@@ -31,17 +31,29 @@ const fadeUp = (delay: number): {
   transition: { delay, duration: 0.7, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] },
 })
 
-// ── Headline data ───────────────────────────────────────────────────────────
+// ── Types ───────────────────────────────────────────────────────────────────
 
-const LINES: { text: string; accent: boolean }[] = [
+export interface HeroLine { text: string; accent: boolean }
+
+export interface HeroProps {
+  badge?:   string
+  lines?:   HeroLine[]
+  subtext?: string
+}
+
+const DEFAULT_LINES: HeroLine[] = [
   { text: 'Luxury Coach &', accent: false },
-  { text: 'Minibus Hire', accent: false },
-  { text: 'Across the UK', accent: true },
+  { text: 'Minibus Hire',   accent: false },
+  { text: 'Across the UK',  accent: true  },
 ]
 
 // ── Component ───────────────────────────────────────────────────────────────
 
-export default function Hero() {
+export default function Hero({
+  badge   = 'Premium Coach & Minibus Hire',
+  lines   = DEFAULT_LINES,
+  subtext = 'Reliable, professional transport for airport transfers, events and group travel.',
+}: HeroProps = {}) {
   return (
     <section
       aria-label="hero"
@@ -75,7 +87,7 @@ export default function Hero() {
               className="text-[#EBBA6F] text-[11px] font-medium tracking-[0.16em] uppercase"
               style={{ fontFamily: 'var(--font-ui)' }}
             >
-              Premium Coach &amp; Minibus Hire
+              {badge}
             </span>
           </motion.div>
 
@@ -84,7 +96,7 @@ export default function Hero() {
             className="mb-7 leading-[0.91] tracking-[-0.015em]"
             style={{ fontFamily: 'var(--font-display)', fontWeight: 300 }}
           >
-            {LINES.map((line, i) => (
+            {lines.map((line, i) => (
               <motion.span
                 key={line.text}
                 className={[
@@ -107,8 +119,7 @@ export default function Hero() {
             className="text-white/70 text-[clamp(0.95rem,1.4vw,1.1rem)] leading-relaxed mb-7 max-w-[400px]"
             style={{ fontFamily: 'var(--font-body)' }}
           >
-            Reliable, professional transport for airport transfers,
-            events and group travel.
+            {subtext}
           </motion.p>
 
           {/* Trust row */}
