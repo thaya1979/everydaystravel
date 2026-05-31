@@ -143,51 +143,56 @@ export default function Hero({
           {/* Subtext */}
           <motion.p
             {...fadeUp(0.6)}
-            className="text-white/70 text-[clamp(0.95rem,1.4vw,1.1rem)] leading-relaxed mb-7 max-w-[400px]"
+            className="text-white/70 text-[clamp(0.95rem,1.4vw,1.1rem)] leading-relaxed mb-5 max-w-[400px]"
             style={{ fontFamily: 'var(--font-body)' }}
           >
             {subtext}
           </motion.p>
 
-          {/* Trust row */}
-          <motion.div {...fadeUp(0.75)} className="flex items-center gap-3">
-            <div
-              className="flex items-center gap-0.5"
-              aria-label="4 out of 5 stars"
-              role="img"
-            >
-              {[0, 1, 2, 3].map((i) => (
-                <svg
-                  key={i}
-                  width="15"
-                  height="15"
-                  viewBox="0 0 20 20"
-                  fill="#EBBA6F"
-                  aria-hidden
-                >
-                  <path d="M10 1l2.4 4.9 5.3.8-3.9 3.8.9 5.3-4.7-2.5-4.8 2.5.9-5.3-3.8-3.8 5.3-.8L10 1z" />
-                </svg>
-              ))}
-              <svg
-                width="15"
-                height="15"
-                viewBox="0 0 20 20"
-                fill="#EBBA6F"
-                opacity="0.35"
-                aria-hidden
-              >
-                <path d="M10 1l2.4 4.9 5.3.8-3.9 3.8.9 5.3-4.7-2.5-4.8 2.5.9-5.3-3.8-3.8 5.3-.8L10 1z" />
+          {/* Trustpilot card */}
+          <motion.a
+            {...fadeUp(0.75)}
+            href="https://www.trustpilot.com/evaluate/everydaystravel.co.uk"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-4 bg-white rounded-xl px-5 py-3.5 shadow-[0_4px_24px_rgba(0,0,0,0.18)] hover:shadow-[0_6px_32px_rgba(0,0,0,0.28)] transition-shadow duration-200 group"
+          >
+            {/* Wordmark */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="#00B67A" aria-hidden>
+                <path d="M12 2l2.582 7.953H22l-6.29 4.573 2.4 7.388L12 17.35l-6.11 4.564 2.4-7.388L2 9.953h7.418L12 2z" />
               </svg>
+              <span className="text-[13px] font-bold text-[#191919] tracking-[-0.01em]" style={{ fontFamily: 'var(--font-ui)' }}>
+                Trustpilot
+              </span>
             </div>
-            <p
-              className="text-white/65 text-sm"
-              style={{ fontFamily: 'var(--font-body)' }}
+
+            {/* Divider */}
+            <div className="w-px h-8 bg-black/10 shrink-0" />
+
+            {/* Score + stars */}
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-[24px] font-semibold text-[#191919] leading-none" style={{ fontFamily: 'var(--font-ui)' }}>
+                4.4
+              </span>
+              <img
+                src="https://res.cloudinary.com/dckyndryf/image/upload/v1780237231/stars-5_w1ckxp.svg"
+                alt="5 stars"
+                className="h-[20px] w-auto"
+              />
+            </div>
+
+            {/* Divider */}
+            <div className="w-px h-8 bg-black/10 shrink-0" />
+
+            {/* CTA */}
+            <span
+              className="text-[13px] font-semibold text-white bg-[#00B67A] px-3.5 py-1.5 rounded-lg shrink-0 group-hover:bg-[#00a368] transition-colors duration-150"
+              style={{ fontFamily: 'var(--font-ui)' }}
             >
-              Trusted by{' '}
-              <strong className="text-white font-semibold">500+</strong>{' '}
-              customers
-            </p>
-          </motion.div>
+              Write a review
+            </span>
+          </motion.a>
 
         </div>
       </div>
