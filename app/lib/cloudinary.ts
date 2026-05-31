@@ -1,23 +1,13 @@
-import { v2 as cloudinary } from 'cloudinary'
+// Client-safe Cloudinary URL helper — no Node.js SDK, works in browser too.
+// The cloud name is public (appears in every URL) so it is safe to inline here.
 
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key:    process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-  secure:     true,
-})
-
-export default cloudinary
-
-// ── URL helpers ───────────────────────────────────────────────────────────────
-
-const BASE = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload`
+const CLOUD = 'dckyndryf'
 
 /**
- * Returns a Cloudinary URL with automatic format, quality, and optional
- * max-width so browsers never download more pixels than they need.
+ * Returns a Cloudinary URL with automatic format, quality, and an optional
+ * max-width cap so browsers never download more pixels than they need.
  */
 export function cdnUrl(publicId: string, widthPx?: number): string {
   const transforms = ['f_auto', 'q_auto', ...(widthPx ? [`w_${widthPx},c_limit`] : [])]
-  return `${BASE}/${transforms.join(',')}/${publicId}`
+  return `https://res.cloudinary.com/${CLOUD}/image/upload/${transforms.join(',')}/${publicId}`
 }
