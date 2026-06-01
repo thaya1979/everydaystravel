@@ -63,7 +63,7 @@ export const DEFAULT_SERVICES: ServiceItem[] = [
 
 // ── Card ──────────────────────────────────────────────────────────────────────
 
-function ServiceCard({ service, index }: { service: ServiceItem; index: number }) {
+function ServiceCard({ service }: { service: ServiceItem }) {
   return (
     <Link
       href={service.href}
@@ -83,17 +83,7 @@ function ServiceCard({ service, index }: { service: ServiceItem; index: number }
       {/* Gradient overlay — heavy at bottom, light at top */}
       <div className="absolute inset-0 bg-gradient-to-t from-[#04060E]/95 via-[#04060E]/40 to-[#04060E]/10" />
 
-      {/* Index badge — top left */}
-      <div className="absolute top-4 left-4">
-        <span
-          className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[#0C0F1C]/60 border border-white/15 text-white/45 text-[11px] backdrop-blur-sm"
-          style={{ fontFamily: 'var(--font-ui)' }}
-        >
-          {String(index + 1).padStart(2, '0')}
-        </span>
-      </div>
-
-      {/* Content — pinned to bottom */}
+{/* Content — pinned to bottom */}
       <div className="absolute inset-x-0 bottom-0 p-5 flex flex-col gap-2">
         <h3
           className="text-white leading-[0.95] tracking-[-0.01em]"
@@ -176,8 +166,8 @@ export default function ServicesGrid({
 
         {/* Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {services.map((service, i) => (
-            <ServiceCard key={service.href} service={service} index={i} />
+          {services.map((service) => (
+            <ServiceCard key={service.href} service={service} />
           ))}
         </div>
 
