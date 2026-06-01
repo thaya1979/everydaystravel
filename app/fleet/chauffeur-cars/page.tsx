@@ -27,6 +27,7 @@ export default function ChauffeurCarsPage() {
       <StatBand stats={STATS} />
       <VehicleList
         vehicles={CHAUFFEUR_CARS}
+        category="chauffeur-cars"
         heading="Our chauffeur cars"
         subtext="Every vehicle is maintained to the highest standard and driven by professional, uniformed chauffeurs."
       />

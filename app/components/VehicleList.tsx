@@ -5,6 +5,7 @@ import { Check, MessageCircle, ArrowRight, Users, Briefcase } from 'lucide-react
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export interface Vehicle {
+  slug:        string
   name:        string
   badge:       string
   image:       string
@@ -16,9 +17,10 @@ export interface Vehicle {
 }
 
 interface VehicleListProps {
-  vehicles: Vehicle[]
-  heading?: string
-  subtext?: string
+  vehicles:  Vehicle[]
+  heading?:  string
+  subtext?:  string
+  category?: string  // e.g. 'chauffeur-cars' — used to build detail page URLs
 }
 
 // ── Placeholder ───────────────────────────────────────────────────────────────
@@ -29,6 +31,7 @@ const PH = 'https://res.cloudinary.com/dckyndryf/image/upload/f_auto,q_auto,w_90
 
 export const CHAUFFEUR_CARS: Vehicle[] = [
   {
+    slug:        'mercedes-e-class',
     name:        'Mercedes-Benz E-Class Executive',
     badge:       'Executive',
     image:       PH,
@@ -39,6 +42,7 @@ export const CHAUFFEUR_CARS: Vehicle[] = [
     idealFor:    ['Corporate Travel', 'Airport Transfers'],
   },
   {
+    slug:        'mercedes-s-class',
     name:        'Mercedes-Benz S-Class Executive',
     badge:       'Executive',
     image:       PH,
@@ -49,6 +53,7 @@ export const CHAUFFEUR_CARS: Vehicle[] = [
     idealFor:    ['VIP Clients', 'Weddings', 'Private Hire'],
   },
   {
+    slug:        'mercedes-v-class',
     name:        'Mercedes-Benz V-Class Executive',
     badge:       'Executive MPV',
     image:       PH,
@@ -62,6 +67,7 @@ export const CHAUFFEUR_CARS: Vehicle[] = [
 
 export const LUXURY_MINIBUSES: Vehicle[] = [
   {
+    slug:        '8-seater-minibus',
     name:        '8-Seater Executive Minibus',
     badge:       'Minibus',
     image:       PH,
@@ -72,6 +78,7 @@ export const LUXURY_MINIBUSES: Vehicle[] = [
     idealFor:    ['Corporate Groups', 'Airport Transfers', 'Private Hire'],
   },
   {
+    slug:        '12-seater-minibus',
     name:        '12-Seater Luxury Minibus',
     badge:       'Minibus',
     image:       PH,
@@ -82,6 +89,7 @@ export const LUXURY_MINIBUSES: Vehicle[] = [
     idealFor:    ['Events', 'School Trips', 'Group Travel'],
   },
   {
+    slug:        '16-seater-minibus',
     name:        '16-Seater Luxury Minibus',
     badge:       'Minibus',
     image:       PH,
@@ -95,6 +103,7 @@ export const LUXURY_MINIBUSES: Vehicle[] = [
 
 export const EXECUTIVE_COACHES: Vehicle[] = [
   {
+    slug:        '33-seater-coach',
     name:        '33-Seater Executive Coach',
     badge:       'Coach',
     image:       PH,
@@ -105,6 +114,7 @@ export const EXECUTIVE_COACHES: Vehicle[] = [
     idealFor:    ['Corporate Away-Days', 'Tours', 'Airport Transfers'],
   },
   {
+    slug:        '53-seater-coach',
     name:        '53-Seater Executive Coach',
     badge:       'Coach',
     image:       PH,
@@ -116,9 +126,19 @@ export const EXECUTIVE_COACHES: Vehicle[] = [
   },
 ]
 
+// ── All vehicles flat list (for booking form dropdown) ────────────────────────
+
+export const ALL_VEHICLE_OPTIONS = [
+  { group: 'Chauffeur Cars',     vehicles: CHAUFFEUR_CARS },
+  { group: 'Luxury Minibuses',   vehicles: LUXURY_MINIBUSES },
+  { group: 'Executive Coaches',  vehicles: EXECUTIVE_COACHES },
+]
+
 // ── Card ──────────────────────────────────────────────────────────────────────
 
-function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
+function VehicleCard({ vehicle, category }: { vehicle: Vehicle; category?: string }) {
+  const detailHref = category ? `/fleet/${category}/${vehicle.slug}` : undefined
+
   return (
     <article className="group flex flex-col lg:flex-row bg-[#0D1221] rounded-2xl border border-white/[0.07] overflow-hidden transition-all duration-300 hover:border-[#EBBA6F]/40 hover:shadow-[0_0_0_1px_rgba(235,186,111,0.12),0_8px_40px_rgba(235,186,111,0.07)]">
 
@@ -207,15 +227,27 @@ function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
             ))}
           </div>
 
-          <div className="flex items-center gap-2.5 shrink-0">
-            <Link
-              href="/contact"
-              className="flex items-center gap-2 px-6 py-3 bg-[#EBBA6F] text-[#0C0F1C] text-[14px] font-semibold rounded-full hover:bg-[#E2B36A] active:bg-[#D4A85E] transition-colors duration-150"
-              style={{ fontFamily: 'var(--font-ui)' }}
-            >
-              Get a Quote
-              <ArrowRight size={13} strokeWidth={2.5} aria-hidden />
-            </Link>
+          <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+            {detailHref && (
+              <Link
+                href={detailHref}
+                className="flex items-center gap-2 px-6 py-3 bg-[#EBBA6F] text-[#0C0F1C] text-[14px] font-semibold rounded-full hover:bg-[#E2B36A] active:bg-[#D4A85E] transition-colors duration-150"
+                style={{ fontFamily: 'var(--font-ui)' }}
+              >
+                View details
+                <ArrowRight size={13} strokeWidth={2.5} aria-hidden />
+              </Link>
+            )}
+            {!detailHref && (
+              <Link
+                href="/contact"
+                className="flex items-center gap-2 px-6 py-3 bg-[#EBBA6F] text-[#0C0F1C] text-[14px] font-semibold rounded-full hover:bg-[#E2B36A] active:bg-[#D4A85E] transition-colors duration-150"
+                style={{ fontFamily: 'var(--font-ui)' }}
+              >
+                Get a Quote
+                <ArrowRight size={13} strokeWidth={2.5} aria-hidden />
+              </Link>
+            )}
             <a
               href="https://wa.me/4402089418334"
               target="_blank"
@@ -236,7 +268,7 @@ function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export default function VehicleList({ vehicles, heading = 'Our vehicles', subtext }: VehicleListProps) {
+export default function VehicleList({ vehicles, heading = 'Our vehicles', subtext, category }: VehicleListProps) {
   return (
     <section className="bg-[#0C0F1C]">
       <div className="max-w-[1440px] mx-auto px-5 sm:px-8 lg:px-12 py-20 lg:py-28">
@@ -262,7 +294,7 @@ export default function VehicleList({ vehicles, heading = 'Our vehicles', subtex
 
         <div className="flex flex-col gap-5">
           {vehicles.map((v) => (
-            <VehicleCard key={v.name} vehicle={v} />
+            <VehicleCard key={v.name} vehicle={v} category={category} />
           ))}
         </div>
 

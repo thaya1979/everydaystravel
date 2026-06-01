@@ -155,39 +155,39 @@ export default function Hero({
             href="https://www.trustpilot.com/evaluate/everydaystravel.co.uk"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-4 bg-white rounded-xl px-5 py-3.5 shadow-[0_4px_24px_rgba(0,0,0,0.18)] hover:shadow-[0_6px_32px_rgba(0,0,0,0.28)] transition-shadow duration-200 group"
+            className="inline-flex items-center gap-2.5 sm:gap-4 bg-white rounded-xl px-3.5 sm:px-5 py-3 sm:py-3.5 shadow-[0_4px_24px_rgba(0,0,0,0.18)] hover:shadow-[0_6px_32px_rgba(0,0,0,0.28)] transition-shadow duration-200 group"
           >
             {/* Wordmark */}
             <div className="flex items-center gap-1.5 shrink-0">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="#00B67A" aria-hidden>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="#00B67A" aria-hidden>
                 <path d="M12 2l2.582 7.953H22l-6.29 4.573 2.4 7.388L12 17.35l-6.11 4.564 2.4-7.388L2 9.953h7.418L12 2z" />
               </svg>
-              <span className="text-[13px] font-bold text-[#191919] tracking-[-0.01em]" style={{ fontFamily: 'var(--font-ui)' }}>
+              <span className="text-[12px] sm:text-[13px] font-bold text-[#191919] tracking-[-0.01em]" style={{ fontFamily: 'var(--font-ui)' }}>
                 Trustpilot
               </span>
             </div>
 
             {/* Divider */}
-            <div className="w-px h-8 bg-black/10 shrink-0" />
+            <div className="w-px h-6 sm:h-8 bg-black/10 shrink-0" />
 
             {/* Score + stars */}
-            <div className="flex items-center gap-2 shrink-0">
-              <span className="text-[24px] font-semibold text-[#191919] leading-none" style={{ fontFamily: 'var(--font-ui)' }}>
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+              <span className="text-[18px] sm:text-[24px] font-semibold text-[#191919] leading-none" style={{ fontFamily: 'var(--font-ui)' }}>
                 4.4
               </span>
               <img
                 src="https://res.cloudinary.com/dckyndryf/image/upload/v1780237231/stars-5_w1ckxp.svg"
                 alt="5 stars"
-                className="h-[20px] w-auto"
+                className="h-[15px] sm:h-[20px] w-auto"
               />
             </div>
 
             {/* Divider */}
-            <div className="w-px h-8 bg-black/10 shrink-0" />
+            <div className="w-px h-6 sm:h-8 bg-black/10 shrink-0" />
 
             {/* CTA */}
             <span
-              className="text-[13px] font-semibold text-white bg-[#00B67A] px-3.5 py-1.5 rounded-lg shrink-0 group-hover:bg-[#00a368] transition-colors duration-150"
+              className="text-[12px] sm:text-[13px] font-semibold text-white bg-[#00B67A] px-2.5 py-1.5 sm:px-3.5 rounded-lg shrink-0 group-hover:bg-[#00a368] transition-colors duration-150"
               style={{ fontFamily: 'var(--font-ui)' }}
             >
               Write a review

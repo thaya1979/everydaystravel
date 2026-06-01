@@ -1,0 +1,434 @@
+'use client'
+
+import { useState, useRef, useEffect, useMemo } from 'react'
+import { AnimatePresence, motion } from 'motion/react'
+import {
+  MapPin, Users, Clock, Car,
+  ArrowRight, ArrowRightLeft, ChevronDown, Check,
+} from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { UK_LOCATION_GROUPS } from '@/app/lib/uk-locations'
+import { ALL_VEHICLE_OPTIONS } from './VehicleList'
+
+// ── Shared style tokens ───────────────────────────────────────────────────────
+
+const base =
+  'w-full h-10 rounded-md border border-white/10 bg-[#0C0F1C] text-[13px] transition-colors duration-150'
+
+const inputCls =
+  base + ' text-white placeholder:text-white/30 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-[#EBBA6F]'
+
+const selectCls = (hasValue: boolean) =>
+  base +
+  ' pl-8 pr-8 appearance-none cursor-pointer [color-scheme:dark] focus:outline-none focus:border-[#EBBA6F] focus:ring-0 ' +
+  (hasValue ? 'text-white' : 'text-white/30')
+
+const REVEAL = {
+  initial:    { opacity: 0, height: 0, marginTop: 0 },
+  animate:    { opacity: 1, height: 'auto', marginTop: 16 },
+  exit:       { opacity: 0, height: 0, marginTop: 0 },
+  transition: { duration: 0.2, ease: 'easeOut' },
+} as const
+
+const TIME_OPTIONS = Array.from({ length: 38 }, (_, i) => {
+  const total = 5 * 60 + i * 30
+  const h = Math.floor(total / 60) % 24
+  const m = total % 60
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+})
+
+const today = new Date().toISOString().split('T')[0]
+
+// ── FieldLabel ────────────────────────────────────────────────────────────────
+
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <span
+      className="block text-white/45 text-[11px] mb-1.5 tracking-[0.02em]"
+      style={{ fontFamily: 'var(--font-ui)' }}
+    >
+      {children}
+    </span>
+  )
+}
+
+// ── SimpleSelect (native) ─────────────────────────────────────────────────────
+
+function SimpleSelect({
+  id, ariaLabel, value, onChange, icon: Icon, placeholder, children,
+}: {
+  id: string; ariaLabel: string; value: string; onChange: (v: string) => void
+  icon: React.ElementType; placeholder: string; children: React.ReactNode
+}) {
+  return (
+    <div className="relative">
+      <Icon size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/35 pointer-events-none z-10" aria-hidden />
+      <select
+        id={id} aria-label={ariaLabel} value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={selectCls(!!value)}
+      >
+        <option value="" disabled>{placeholder}</option>
+        {children}
+      </select>
+      <ChevronDown size={13} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/35 pointer-events-none" aria-hidden />
+    </div>
+  )
+}
+
+// ── LocationSelect (searchable combobox) ─────────────────────────────────────
+
+function LocationSelect({ id, ariaLabel, value, onChange, placeholder }: {
+  id: string; ariaLabel: string; value: string; onChange: (v: string) => void; placeholder: string
+}) {
+  const [open, setOpen]       = useState(false)
+  const [search, setSearch]   = useState('')
+  const containerRef          = useRef<HTMLDivElement>(null)
+  const searchRef             = useRef<HTMLInputElement>(null)
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return UK_LOCATION_GROUPS
+    return UK_LOCATION_GROUPS
+      .map(group => ({
+        ...group,
+        locations: group.locations.filter(loc => loc.toLowerCase().includes(q)),
+      }))
+      .filter(group => group.locations.length > 0)
+  }, [search])
+
+  useEffect(() => { if (open) searchRef.current?.focus() }, [open])
+
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false); setSearch('')
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+
+  const handleSelect = (loc: string) => { onChange(loc); setOpen(false); setSearch('') }
+
+  return (
+    <div ref={containerRef} className="relative w-full">
+      <div className="relative">
+        <MapPin size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/35 pointer-events-none z-10" aria-hidden />
+        <button
+          type="button"
+          id={id}
+          role="combobox"
+          aria-label={ariaLabel}
+          aria-expanded={open}
+          aria-haspopup="listbox"
+          onClick={() => setOpen(o => !o)}
+          className={`${base} pl-8 pr-8 flex items-center text-left focus:outline-none focus:border-[#EBBA6F] ${value ? 'text-white' : 'text-white/30'}`}
+        >
+          <span className="truncate" style={{ fontFamily: 'var(--font-body)' }}>
+            {value || placeholder}
+          </span>
+        </button>
+        <ChevronDown
+          size={13}
+          className={`absolute right-3 top-1/2 -translate-y-1/2 text-white/35 pointer-events-none transition-transform duration-150 ${open ? 'rotate-180' : ''}`}
+          aria-hidden
+        />
+      </div>
+
+      {open && (
+        <div className="absolute top-full left-0 right-0 mt-1 z-50 rounded-md border border-white/10 bg-[#0D1221] shadow-2xl overflow-hidden">
+          <div className="p-2 border-b border-white/[0.08]">
+            <input
+              ref={searchRef}
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Escape') { setOpen(false); setSearch('') } }}
+              placeholder="Search locations…"
+              className="w-full h-8 px-3 rounded bg-[#0C0F1C] border border-white/10 text-white text-[13px] placeholder:text-white/25 focus:outline-none focus:border-[#EBBA6F] transition-colors duration-150"
+              style={{ fontFamily: 'var(--font-ui)' }}
+            />
+          </div>
+          <div role="listbox" aria-label={ariaLabel} className="h-[260px] overflow-y-auto">
+            {filtered.map(group => (
+              <div key={group.label}>
+                <div
+                  className="px-3 py-1.5 text-[10px] font-semibold text-white/25 uppercase tracking-[0.08em] sticky top-0 bg-[#0D1221]"
+                  style={{ fontFamily: 'var(--font-ui)' }}
+                  aria-hidden
+                >
+                  {group.label}
+                </div>
+                {group.locations.map(loc => (
+                  <div
+                    key={loc}
+                    role="option"
+                    aria-selected={loc === value}
+                    onClick={() => handleSelect(loc)}
+                    className={`px-3 py-2 text-[13px] cursor-pointer transition-colors duration-100 ${
+                      loc === value
+                        ? 'text-[#EBBA6F] bg-[#EBBA6F]/[0.08]'
+                        : 'text-white/65 hover:text-white hover:bg-white/5'
+                    }`}
+                    style={{ fontFamily: 'var(--font-body)' }}
+                  >
+                    {loc}
+                  </div>
+                ))}
+              </div>
+            ))}
+            {filtered.length === 0 && (
+              <div className="px-3 py-8 text-center text-white/30 text-[13px]" style={{ fontFamily: 'var(--font-body)' }}>
+                No locations found
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
+
+export default function VehicleBookingForm({ defaultVehicleSlug }: { defaultVehicleSlug?: string }) {
+  const [journeyType, setJourneyType] = useState<'oneway' | 'return'>('oneway')
+  const [vehicle, setVehicle]         = useState(defaultVehicleSlug ?? '')
+  const [pickup, setPickup]           = useState('')
+  const [destination, setDestination] = useState('')
+  const [passengers, setPassengers]   = useState('')
+  const [travelDate, setTravelDate]   = useState('')
+  const [pickupTime, setPickupTime]   = useState('')
+  const [returnDate, setReturnDate]   = useState('')
+  const [returnTime, setReturnTime]   = useState('')
+  const [email, setEmail]             = useState('')
+  const [emailError, setEmailError]   = useState('')
+  const [emailTouched, setEmailTouched] = useState(false)
+  const [phone, setPhone]             = useState('')
+  const [submitting, setSubmitting]   = useState(false)
+  const [submitted, setSubmitted]     = useState(false)
+
+  const isReturn = journeyType === 'return'
+
+  const validateEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim())
+
+  const handleEmailBlur = () => {
+    setEmailTouched(true)
+    if (!email) setEmailError('Email address is required')
+    else if (!validateEmail(email)) setEmailError('Please enter a valid email address')
+    else setEmailError('')
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setEmailTouched(true)
+    if (!email) { setEmailError('Email address is required'); return }
+    if (!validateEmail(email)) { setEmailError('Please enter a valid email address'); return }
+    setEmailError('')
+    setSubmitting(true)
+    try {
+      const res = await fetch('/api/quote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ vehicle, journeyType, pickup, destination, passengers, travelDate, pickupTime, returnDate, returnTime, email, phone }),
+      })
+      if (!res.ok) throw new Error('Failed')
+      setSubmitted(true)
+      setTimeout(() => {
+        setSubmitted(false)
+        setPickup(''); setDestination(''); setPassengers('')
+        setTravelDate(''); setPickupTime(''); setReturnDate(''); setReturnTime('')
+        setEmail(''); setPhone(''); setEmailTouched(false); setEmailError('')
+      }, 3000)
+    } catch {
+      alert('Something went wrong. Please try again.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <div className="bg-[#0D1221] rounded-2xl border border-white/[0.08] shadow-[0_0_0_1px_rgba(235,186,111,0.08),0_24px_60px_rgba(0,0,0,0.5)] overflow-hidden">
+
+      {/* Header */}
+      <div className="px-5 py-4 border-b border-white/[0.07] bg-[#EBBA6F]/[0.05]">
+        <p className="text-[#EBBA6F] text-[11px] font-semibold tracking-[0.18em] uppercase mb-0.5" style={{ fontFamily: 'var(--font-ui)' }}>
+          Get an instant quote
+        </p>
+        <p className="text-white/40 text-[12px]" style={{ fontFamily: 'var(--font-body)' }}>
+          Fill in your journey details below
+        </p>
+      </div>
+
+      {submitted ? (
+        <div className="flex flex-col items-center justify-center py-10 gap-3 text-center px-5">
+          <div className="w-10 h-10 rounded-full bg-[#EBBA6F]/15 flex items-center justify-center">
+            <Check size={18} strokeWidth={2} className="text-[#EBBA6F]" aria-hidden />
+          </div>
+          <p className="text-white text-[15px] font-medium" style={{ fontFamily: 'var(--font-body)' }}>Quote request sent!</p>
+          <p className="text-white/45 text-[13px]" style={{ fontFamily: 'var(--font-body)' }}>
+            We'll be in touch shortly at <span className="text-white/70">{email}</span>
+          </p>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} noValidate className="p-5 flex flex-col gap-4">
+
+          {/* Vehicle */}
+          <div>
+            <FieldLabel>Selected vehicle</FieldLabel>
+            <SimpleSelect
+              id="vbf-vehicle" ariaLabel="Vehicle" value={vehicle}
+              onChange={setVehicle} icon={Car} placeholder="Select a vehicle"
+            >
+              {ALL_VEHICLE_OPTIONS.map(({ group, vehicles }) => (
+                <optgroup key={group} label={group}>
+                  {vehicles.map((v) => (
+                    <option key={v.slug} value={v.slug}>{v.name}</option>
+                  ))}
+                </optgroup>
+              ))}
+            </SimpleSelect>
+          </div>
+
+          {/* Journey type */}
+          <div className="flex gap-1.5">
+            <button
+              type="button"
+              aria-pressed={!isReturn}
+              onClick={() => setJourneyType('oneway')}
+              className={['flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[12.5px] font-medium transition-all duration-200',
+                !isReturn ? 'bg-[#1e2338] text-white border border-white/20' : 'text-white/45 hover:text-white/70'].join(' ')}
+              style={{ fontFamily: 'var(--font-ui)' }}
+            >
+              <ArrowRight size={12} aria-hidden />One way
+            </button>
+            <button
+              type="button"
+              aria-pressed={isReturn}
+              onClick={() => setJourneyType('return')}
+              className={['flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[12.5px] font-medium transition-all duration-200',
+                isReturn ? 'bg-[#1e2338] text-white border border-white/20' : 'text-white/45 hover:text-white/70'].join(' ')}
+              style={{ fontFamily: 'var(--font-ui)' }}
+            >
+              <ArrowRightLeft size={12} aria-hidden />Return
+            </button>
+          </div>
+
+          {/* Pickup */}
+          <div>
+            <label htmlFor="vbf-pickup"><FieldLabel>Pickup location</FieldLabel></label>
+            <LocationSelect id="vbf-pickup" ariaLabel="Pickup location" value={pickup} onChange={setPickup} placeholder="Select pickup location" />
+          </div>
+
+          {/* Destination */}
+          <div>
+            <label htmlFor="vbf-dest"><FieldLabel>Destination</FieldLabel></label>
+            <LocationSelect id="vbf-dest" ariaLabel="Destination" value={destination} onChange={setDestination} placeholder="Select destination" />
+          </div>
+
+          {/* Passengers */}
+          <div>
+            <label htmlFor="vbf-pax"><FieldLabel>Passengers</FieldLabel></label>
+            <div className="relative">
+              <Users size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/35 pointer-events-none z-10" aria-hidden />
+              <Input id="vbf-pax" type="number" min="1" value={passengers}
+                onChange={(e) => setPassengers(e.target.value)}
+                placeholder="Number of passengers" className={`pl-8 ${inputCls}`} />
+            </div>
+          </div>
+
+          {/* Date + Time row */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label htmlFor="vbf-date"><FieldLabel>Travel date</FieldLabel></label>
+              <div className="relative min-w-0 overflow-hidden">
+                <Input id="vbf-date" type="date" value={travelDate} min={today}
+                  onChange={(e) => setTravelDate(e.target.value)}
+                  className={`w-full [color-scheme:dark] ${base} focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-[#EBBA6F] ${travelDate ? 'text-white' : 'text-white/30'}`} />
+              </div>
+            </div>
+            <div>
+              <label htmlFor="vbf-time"><FieldLabel>Pickup time</FieldLabel></label>
+              <SimpleSelect id="vbf-time" ariaLabel="Pickup time" value={pickupTime} onChange={setPickupTime} icon={Clock} placeholder="Time">
+                {TIME_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
+              </SimpleSelect>
+            </div>
+          </div>
+
+          {/* Return fields */}
+          <AnimatePresence>
+            {isReturn && (
+              <motion.div {...REVEAL} className="overflow-hidden">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label htmlFor="vbf-rdate"><FieldLabel>Return date</FieldLabel></label>
+                    <div className="relative min-w-0 overflow-hidden">
+                      <Input id="vbf-rdate" type="date" value={returnDate} min={travelDate || today}
+                        onChange={(e) => setReturnDate(e.target.value)}
+                        className={`w-full [color-scheme:dark] ${base} focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-[#EBBA6F] ${returnDate ? 'text-white' : 'text-white/30'}`} />
+                    </div>
+                  </div>
+                  <div>
+                    <label htmlFor="vbf-rtime"><FieldLabel>Return time</FieldLabel></label>
+                    <SimpleSelect id="vbf-rtime" ariaLabel="Return time" value={returnTime} onChange={setReturnTime} icon={Clock} placeholder="Time">
+                      {TIME_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
+                    </SimpleSelect>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Divider */}
+          <div className="h-px bg-white/[0.06]" />
+
+          {/* Email */}
+          <div>
+            <label htmlFor="vbf-email"><FieldLabel>Email address</FieldLabel></label>
+            <Input id="vbf-email" type="email" value={email}
+              onChange={(e) => {
+                setEmail(e.target.value)
+                if (emailTouched) {
+                  const v = e.target.value
+                  if (!v) setEmailError('Email address is required')
+                  else if (!validateEmail(v)) setEmailError('Please enter a valid email address')
+                  else setEmailError('')
+                }
+              }}
+              onBlur={handleEmailBlur}
+              placeholder="your@email.com"
+              aria-invalid={emailTouched && !!emailError}
+              className={`${inputCls} ${emailTouched && emailError ? '!border-red-500/70' : ''}`} />
+            {emailTouched && emailError && (
+              <p className="mt-1.5 text-[11px] text-red-400" role="alert" style={{ fontFamily: 'var(--font-ui)' }}>
+                {emailError}
+              </p>
+            )}
+          </div>
+
+          {/* Phone */}
+          <div>
+            <label htmlFor="vbf-phone"><FieldLabel>Phone number</FieldLabel></label>
+            <Input id="vbf-phone" type="tel" value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="+44 7000 000000" className={inputCls} />
+          </div>
+
+          {/* Submit */}
+          <button
+            type="submit"
+            disabled={submitting}
+            className="mt-1 h-11 flex items-center justify-center gap-2 bg-[#EBBA6F] text-[#0C0F1C] text-[14px] font-semibold rounded-lg hover:bg-[#E2B36A] active:bg-[#D4A85E] transition-colors duration-150 disabled:opacity-60 disabled:cursor-not-allowed w-full"
+            style={{ fontFamily: 'var(--font-ui)' }}
+          >
+            {submitting ? 'Sending…' : 'Get Instant Quote'}
+            {!submitting && <ArrowRight size={15} aria-hidden />}
+          </button>
+
+        </form>
+      )}
+    </div>
+  )
+}
