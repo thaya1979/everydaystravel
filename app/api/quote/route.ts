@@ -4,7 +4,7 @@ import { CHAUFFEUR_CARS, LUXURY_MINIBUSES, EXECUTIVE_COACHES } from '@/app/compo
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
-const TO_EMAIL = 'karthikchembhc@gmail.com'
+const TO_EMAILS = ['web@everydaystravel.co.uk', 'sales@everydaystravel.co.uk']
 
 const ALL_VEHICLES = [...CHAUFFEUR_CARS, ...LUXURY_MINIBUSES, ...EXECUTIVE_COACHES]
 
@@ -75,8 +75,8 @@ export async function POST(request: Request) {
   `
 
   const { error } = await resend.emails.send({
-    from: 'Everyday Travels <onboarding@resend.dev>',
-    to: TO_EMAIL,
+    from: 'Everyday Travels <noreply@everydaystravel.co.uk>',
+    to: TO_EMAILS,
     replyTo: email,
     subject,
     html,
