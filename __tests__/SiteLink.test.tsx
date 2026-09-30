@@ -22,9 +22,9 @@ describe('isUnavailable', () => {
   })
 
   it('ignores trailing slashes, query strings and fragments', () => {
-    expect(isUnavailable('/faqs/')).toBe(true)
-    expect(isUnavailable('/faqs#pricing')).toBe(true)
-    expect(isUnavailable('/terms?ref=footer')).toBe(true)
+    expect(isUnavailable('/blog/')).toBe(true)
+    expect(isUnavailable('/blog#latest')).toBe(true)
+    expect(isUnavailable('/vacancies?ref=footer')).toBe(true)
   })
 
   it('leaves real routes alone', () => {
@@ -57,11 +57,11 @@ describe('SiteLink', () => {
   })
 
   it('renders an unbuilt route as an inert, non-navigating element', () => {
-    render(<SiteLink href="/faqs">FAQs</SiteLink>)
+    render(<SiteLink href="/blog">Travel Inspirations</SiteLink>)
 
     expect(screen.queryByRole('link')).not.toBeInTheDocument()
 
-    const inert = screen.getByText('FAQs')
+    const inert = screen.getByText('Travel Inspirations')
     expect(inert.tagName).toBe('SPAN')
     expect(inert).not.toHaveAttribute('href')
     expect(inert).toHaveAttribute('aria-disabled', 'true')
@@ -70,8 +70,8 @@ describe('SiteLink', () => {
   })
 
   it('keeps the caller styling on an inert link so layout does not shift', () => {
-    render(<SiteLink href="/terms" className="text-[12px] font-medium">Terms of Use</SiteLink>)
-    const inert = screen.getByText('Terms of Use')
+    render(<SiteLink href="/vacancies" className="text-[12px] font-medium">Vacancies</SiteLink>)
+    const inert = screen.getByText('Vacancies')
     expect(inert.className).toContain('text-[12px]')
     expect(inert.className).toContain('font-medium')
   })
