@@ -2,20 +2,21 @@
 
 import { useRef, useState, useCallback } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
 import { ArrowUpRight, ChevronLeft, ChevronRight } from 'lucide-react'
 import { FLEET_CATEGORIES } from '../data/fleet'
 
 // The vehicles we lead with on the homepage, as [category slug, vehicle slug].
 // Resolved against the real fleet below so names, photos and links can never go
 // stale — an unknown slug is dropped rather than rendered as a broken card.
-const HIGHLIGHTS: { category: string; vehicle: string; tag?: string }[] = [
-  { category: 'executive-coaches', vehicle: '53-seater-coach', tag: 'Most popular' },
+const HIGHLIGHTS: { category: string; vehicle: string }[] = [
+  { category: 'executive-coaches', vehicle: '53-seater-coach' },
   { category: 'executive-coaches', vehicle: '55-seater-neoplan-tourliner' },
   { category: 'luxury-minibuses',  vehicle: '7-seater-mpv-v-class' },
   { category: 'chauffeur-cars',    vehicle: 'mercedes-s-class' },
 ]
 
-const FLEET = HIGHLIGHTS.flatMap(({ category, vehicle, tag }) => {
+const FLEET = HIGHLIGHTS.flatMap(({ category, vehicle }) => {
   const found = FLEET_CATEGORIES
     .find((c) => c.slug === category)
     ?.vehicles.find((v) => v.slug === vehicle)
@@ -27,7 +28,6 @@ const FLEET = HIGHLIGHTS.flatMap(({ category, vehicle, tag }) => {
     href:     `/fleet/${category}/${found.slug}`,
     features: found.features.slice(0, 3),
     image:    found.image,
-    tag:      tag ?? null,
   }]
 })
 
@@ -110,10 +110,11 @@ export default function FleetCarousel() {
           style={{ scrollbarWidth: 'none' }}
         >
         {FLEET.map((item) => (
-          <div
+          <Link
             key={item.href}
+            href={item.href}
             data-fleet-card
-            className="relative flex-shrink-0 rounded-2xl overflow-hidden group cursor-pointer w-[82vw] sm:w-[45vw] lg:w-[29vw] max-w-[400px]"
+            className="relative flex-shrink-0 rounded-2xl overflow-hidden group block w-[82vw] sm:w-[45vw] lg:w-[29vw] max-w-[400px]"
             style={{ aspectRatio: '3/4' }}
           >
             {/* Image */}
@@ -127,18 +128,6 @@ export default function FleetCarousel() {
 
             {/* Gradient overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-[#04060E]/95 via-[#04060E]/35 to-transparent" />
-
-            {/* Tag */}
-            {item.tag && (
-              <div className="absolute top-4 left-4">
-                <span
-                  className="px-3 py-1 bg-[#EBBA6F] text-[#0C0F1C] text-[11px] font-semibold rounded-full"
-                  style={{ fontFamily: 'var(--font-ui)' }}
-                >
-                  {item.tag}
-                </span>
-              </div>
-            )}
 
             {/* Content */}
             <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-6">
@@ -158,16 +147,17 @@ export default function FleetCarousel() {
               >
                 {item.features.join(' • ')}
               </p>
-              <a
-                href={item.href}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-white text-[#0C0F1C] text-[12.5px] font-semibold rounded-full hover:bg-[#EBBA6F] transition-colors duration-200 select-none"
+              {/* A span, not a nested link — the whole card is already the
+                  link, and the pill golds on hover anywhere over the card. */}
+              <span
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-white text-[#0C0F1C] text-[12.5px] font-semibold rounded-full group-hover:bg-[#EBBA6F] transition-colors duration-200 select-none"
                 style={{ fontFamily: 'var(--font-ui)' }}
               >
                 Explore
                 <ArrowUpRight size={13} strokeWidth={2.5} aria-hidden />
-              </a>
+              </span>
             </div>
-          </div>
+          </Link>
         ))}
         </div>
       </div>
