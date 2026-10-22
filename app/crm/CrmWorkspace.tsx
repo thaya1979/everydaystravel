@@ -1,4 +1,5 @@
 "use client";
+import StaffLogin from "./StaffLogin";
 import { useCallback, useEffect, useState } from "react";
 import {
   Clock3,
@@ -25,7 +26,8 @@ import VehicleManager from "./VehicleManager";
 import { londonDate } from "@/app/lib/crm/calendar";
 import type { LeadDraft } from "./ui";
 import Pipeline from "./Pipeline";
-import Mailbox from "./Mailbox";
+import SharedInbox from "./SharedInbox";
+
 import Followups from "./Followups";
 import Integrations from "./Integrations";
 import LeadDetails from "./LeadDetails";
@@ -47,14 +49,17 @@ const descriptions: Record<View, string> = {
   integrations: "Bring the tools you use into one workspace.",
 };
 export default function CrmWorkspace({
+  hosted = false,
   initialView = "pipeline",
   initialError = "",
   initialConnected = false,
 }: {
+  hosted?: boolean;
   initialView?: View;
   initialError?: string;
   initialConnected?: boolean;
 }) {
+  const [sessionEnded, setSessionEnded] = useState(false);
   const [data, setData] = useState<Snapshot | null>(null);
   const [view, setView] = useState<View>(initialView);
   const [error, setError] = useState(initialError);
@@ -75,16 +80,26 @@ export default function CrmWorkspace({
   const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
   const refresh = useCallback(async () => {
     const response = await fetch("/api/crm", { cache: "no-store" });
+    if (response.status === 401 && hosted) {
+      setData(null);
+      setSessionEnded(true);
+      throw new Error("Sign in again");
+    }
     const result = await response.json();
     if (!response.ok)
       throw new Error(result.error || "Could not load the workspace");
     setData(result);
     return result as Snapshot;
-  }, []);
+  }, [hosted]);
   useEffect(() => {
     let active = true;
     fetch("/api/crm", { cache: "no-store" })
       .then(async (response) => {
+        if (response.status === 401 && hosted) {
+          setData(null);
+          setSessionEnded(true);
+          throw new Error("Sign in again");
+        }
         const result = await response.json();
         if (!response.ok)
           throw new Error(result.error || "Could not load the workspace");
@@ -96,7 +111,20 @@ export default function CrmWorkspace({
     return () => {
       active = false;
     };
-  }, []);
+  }, [hosted]);
+  useEffect(() => {
+    if (!hosted || pending || sessionEnded) return;
+    const sync = () => {
+      if (document.visibilityState === "visible")
+        void refresh().catch(() => {});
+    };
+    const timer = window.setInterval(sync, 30000);
+    window.addEventListener("focus", sync);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", sync);
+    };
+  }, [hosted, pending, refresh, sessionEnded]);
   async function act(input: Record<string, unknown>) {
     setPending(true);
     setError("");
@@ -107,6 +135,11 @@ export default function CrmWorkspace({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(input),
       });
+      if (response.status === 401 && hosted) {
+        setData(null);
+        setSessionEnded(true);
+        throw new Error("Sign in again");
+      }
       const result = await response.json();
       if (!response.ok) {
         if (response.status === 409) {
@@ -162,6 +195,7 @@ export default function CrmWorkspace({
   }
   const currentBooking = data?.bookings?.find((b) => b.id === bookingDraft?.id);
   const current = data?.leads.find((l) => l.id === selected);
+  if (sessionEnded) return <StaffLogin configured />;
   const title = navigation.find((n) => n.id === view)?.label || "CRM";
   return (
     <TooltipProvider>
@@ -197,6 +231,30 @@ export default function CrmWorkspace({
                 </p>
               </div>
               <div className="flex gap-2">
+                {hosted && (
+                  <Button
+                    variant="ghost"
+                    disabled={pending}
+                    onClick={async () => {
+                      setPending(true);
+                      try {
+                        const result = await fetch("/api/crm/session", {
+                          method: "DELETE",
+                        });
+                        if (!result.ok)
+                          throw new Error("Could not sign out. Try again.");
+                        setData(null);
+                        window.location.replace("/crm");
+                      } catch (e) {
+                        setError((e as Error).message);
+                        setPending(false);
+                      }
+                    }}
+                  >
+                    Sign out
+                  </Button>
+                )}
+
                 {data?.google.connected &&
                   view !== "pipeline" &&
                   view !== "calendar" && (
@@ -301,7 +359,7 @@ export default function CrmWorkspace({
               />
             )}
             {data && view === "inbox" && (
-              <Mailbox
+              <SharedInbox
                 data={data}
                 pending={pending}
                 act={act}
@@ -395,14 +453,19 @@ export default function CrmWorkspace({
               const existing = editing !== "new" && Boolean(editing.id);
               await act({
                 ...input,
+                ...(editing !== "new" && editing.sourceWhatsAppId
+                  ? { sourceWhatsAppId: editing.sourceWhatsAppId }
+                  : {}),
                 ...(editing !== "new" && editing.sourceMailId
                   ? { sourceMailId: editing.sourceMailId }
                   : {}),
                 action: existing
                   ? "update"
-                  : editing !== "new" && editing.sourceMailId
-                    ? "mail-import"
-                    : "create",
+                  : editing !== "new" && editing.sourceWhatsAppId
+                    ? "whatsapp-import"
+                    : editing !== "new" && editing.sourceMailId
+                      ? "mail-import"
+                      : "create",
               });
               setNotice(existing ? "Enquiry updated." : "Enquiry created.");
             }}

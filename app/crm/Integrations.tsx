@@ -1,4 +1,6 @@
 "use client";
+import { Checkbox } from "@/components/ui/checkbox";
+import ImportRecords from "./ImportRecords";
 import { useState } from "react";
 import {
   Globe,
@@ -42,6 +44,8 @@ export default function Integrations({
   act: Action;
   onConnect: () => void;
 }) {
+  const [reviewOperation, setReviewOperation] = useState<string | null>(null);
+  const [checkedGoogle, setCheckedGoogle] = useState(false);
   const [confirm, setConfirm] = useState(false);
   return (
     <div className="max-w-4xl space-y-7">
@@ -61,6 +65,11 @@ export default function Integrations({
           </CardAction>
         </CardHeader>
         <CardContent>
+          {data.staff?.admin === false && (
+            <p className="mb-4 text-sm text-muted-foreground">
+              An integration administrator manages this shared connection.
+            </p>
+          )}
           <ItemGroup>
             <Item variant="outline">
               <ItemMedia variant="icon">
@@ -121,6 +130,7 @@ export default function Integrations({
                 <Button
                   variant="outline"
                   size="sm"
+                  disabled={data.staff?.admin === false}
                   onClick={() => setConfirm(true)}
                 >
                   Disconnect
@@ -135,7 +145,11 @@ export default function Integrations({
                   : "Complete the one-time Google OAuth setup below."}
               </p>
               <Button
-                disabled={pending || !data.google.configured}
+                disabled={
+                  pending ||
+                  !data.google.configured ||
+                  data.staff?.admin === false
+                }
                 onClick={onConnect}
               >
                 Connect Google
@@ -201,17 +215,118 @@ export default function Integrations({
       )}
       <Card className="shadow-none">
         <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MessageCircle className="size-5" />
+            WhatsApp Business
+          </CardTitle>
+          <CardDescription>
+            Incoming messages become reviewed enquiries in the shared inbox.
+          </CardDescription>
+          <CardAction>
+            <Badge variant="outline">
+              {data.whatsapp?.configured
+                ? "Webhook configured"
+                : "Setup tomorrow"}
+            </Badge>
+          </CardAction>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm">
+          <p>
+            Messages → Gemini request analysis → review → enquiry → quote →
+            vehicle reservation.
+          </p>
+          <p className="text-muted-foreground">
+            Gemini:{" "}
+            {data.whatsapp?.geminiConfigured
+              ? "configured"
+              : "not configured yet"}
+            . Number onboarding, public message delivery and Firebase activation
+            must be completed before live use.
+          </p>
+          <p className="text-muted-foreground">
+            New incoming texts and captions are supported. Older chat history
+            and attachment contents are not imported or read automatically. No
+            replies or booking changes are sent automatically.
+          </p>
+        </CardContent>
+      </Card>
+      {data.staff?.admin && Boolean(data.operations?.length) && (
+        <section className="space-y-4 border-t pt-6">
+          <h2 className="font-semibold">Review unfinished Calendar updates</h2>
+          <p className="text-sm text-muted-foreground">
+            Check the matching event in Google Calendar before releasing its
+            record for editing. Releasing a record does not change Google
+            Calendar.
+          </p>
+          {data.operations?.map((operation) => (
+            <div
+              key={operation.key}
+              className="space-y-3 rounded-md border p-4"
+            >
+              <p className="text-sm font-medium">
+                {data.bookings?.find((b) => `booking:${b.id}` === operation.key)
+                  ?.title ||
+                  data.leads.find((l) => `lead:${l.id}` === operation.key)
+                    ?.title ||
+                  "Calendar update"}
+              </p>
+              {reviewOperation === operation.key ? (
+                <>
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={checkedGoogle}
+                      onCheckedChange={(value) =>
+                        setCheckedGoogle(value === true)
+                      }
+                    />
+                    I checked this update in Google Calendar
+                  </label>
+                  <Button
+                    size="sm"
+                    disabled={!checkedGoogle || pending}
+                    onClick={() =>
+                      void act({
+                        action: "operation-resolve",
+                        key: operation.key,
+                        token: operation.token,
+                        checked: true,
+                      })
+                        .then(() => {
+                          setReviewOperation(null);
+                          setCheckedGoogle(false);
+                        })
+                        .catch(() => {})
+                    }
+                  >
+                    Release record
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={pending}
+                  onClick={() => {
+                    setReviewOperation(operation.key);
+                    setCheckedGoogle(false);
+                  }}
+                >
+                  Review update
+                </Button>
+              )}
+            </div>
+          ))}
+        </section>
+      )}
+      {data.staff?.admin && <ImportRecords />}
+      <Card className="shadow-none">
+        <CardHeader>
           <CardTitle>Room to grow</CardTitle>
           <CardDescription>Planned integrations</CardDescription>
         </CardHeader>
         <CardContent>
           <ItemGroup>
             {[
-              {
-                icon: MessageCircle,
-                title: "WhatsApp Business",
-                text: "Conversations, quote follow-ups and booking updates.",
-              },
               {
                 icon: MessageCircle,
                 title: "Instagram",
