@@ -1,5 +1,6 @@
 import { render, screen, fireEvent, within } from '@testing-library/react'
 import { vi, describe, it, expect } from 'vitest'
+import { usePathname } from 'next/navigation'
 import Navbar from '@/app/components/Navbar'
 import { FLEET_CATEGORIES } from '@/app/data/fleet'
 
@@ -34,6 +35,38 @@ const openMobileMenu = () => {
 }
 
 describe('Navbar', () => {
+  it('uses the solid shared background when mounted at a restored scroll position', () => {
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 120 })
+    try {
+      render(<Navbar />)
+      expect(screen.getByRole('banner')).toHaveClass('bg-[#0C0F1C]')
+      Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 })
+      fireEvent.scroll(window)
+      expect(screen.getByRole('banner')).toHaveClass('bg-transparent')
+    } finally {
+      Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 })
+    }
+  })
+
+  it('closes an open menu and unlocks scrolling when the route changes', () => {
+    const route = vi.mocked(usePathname)
+    route.mockReturnValue('/')
+    const view = render(<Navbar />)
+    try {
+      openMobileMenu()
+      expect(document.body.style.overflow).toBe('hidden')
+      route.mockReturnValue('/blog')
+      view.rerender(<Navbar />)
+      expect(screen.getByRole('button', { name: /toggle navigation menu/i })).toHaveAttribute('aria-expanded', 'false')
+      expect(document.body.style.overflow).toBe('')
+      route.mockReturnValue('/')
+      view.rerender(<Navbar />)
+      expect(screen.getByRole('button', { name: /toggle navigation menu/i })).toHaveAttribute('aria-expanded', 'false')
+    } finally {
+      route.mockReturnValue('/')
+    }
+  })
+
   it('renders the banner and the logo link', () => {
     render(<Navbar />)
     expect(screen.getByRole('banner')).toBeInTheDocument()
@@ -142,7 +175,7 @@ describe('Navbar — Our Fleet menu', () => {
 })
 
 describe('Navbar — links to pages that do not exist yet', () => {
-  const UNBUILT = ['Our Team', 'Vacancies', 'Travel Inspirations']
+  const UNBUILT = ['Our Team', 'Vacancies']
 
   it('renders unbuilt "More" entries as inert, not as links', () => {
     render(<Navbar />)
@@ -151,6 +184,11 @@ describe('Navbar — links to pages that do not exist yet', () => {
       expect(entry).not.toBeNull()
       expect(entry).not.toHaveAttribute('href')
     }
+  })
+
+  it('links Travel Inspirations to the published blog', () => {
+    render(<Navbar />)
+    expect(screen.getByText('Travel Inspirations').closest('a')).toHaveAttribute('href', '/blog')
   })
 
   it('still links Gallery, which does exist', () => {
